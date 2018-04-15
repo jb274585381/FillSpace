@@ -22,7 +22,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private final String DEV_ZERO = "/dev/zero";
     private final String DIR_FILL_STORAGE = "/FillStorage";
-    // 1MB
     private final int bufferSize = 1024 * 1024;
 
     private TextView tvFreeSpace;
@@ -72,6 +71,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             } else {
                 refreshInfoTextView("创建文件夹失败!");
             }
+        } else {
+            refreshInfoTextView("文件夹路径: " + destinationDir.getAbsolutePath());
         }
     }
 
@@ -115,10 +116,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         buffer.flip();
                         toChannel.write(buffer);
                         buffer.clear();
-//                        if (i % 100 == 0) {
-//                            //计算百分比
-//                            publishProgress(i);
-//                        }
+                        if (i % 100 == 0) {
+                            publishProgress(i * 100 / fillSize);
+                        }
                     }
                     fileInputStream.close();
                     fileOutputStream.close();
@@ -134,8 +134,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             protected void onProgressUpdate(Integer... values) {
                 super.onProgressUpdate(values);
-//                refreshInfoTextView("已写入..." + values[0] + "%");
-//                showStorageFreeSpaceSize();
+                refreshInfoTextView("已写入..." + values[0] + "%");
+                showStorageFreeSpaceSize();
             }
 
             @Override

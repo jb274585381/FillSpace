@@ -18,6 +18,9 @@ import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
+/**
+ * @author bo.jiang
+ */
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private final String DEV_ZERO = "/dev/zero";
@@ -69,7 +72,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             if (destinationDir.mkdir()) {
                 refreshInfoTextView("mkdir: " + destinationDir.getAbsolutePath());
             } else {
-                refreshInfoTextView("创建文件夹失败!");
+                refreshInfoTextView("error: 创建文件夹失败!");
             }
         } else {
             refreshInfoTextView("文件夹路径: " + destinationDir.getAbsolutePath());

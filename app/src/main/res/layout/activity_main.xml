@@ -5,6 +5,30 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
+    <RadioGroup
+        android:id="@+id/radio_gruop"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:orientation="horizontal">
+
+        <RadioButton
+            android:id="@+id/internal"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:checked="true"
+            android:text="内部存储"/>
+
+        <RadioButton
+            android:id="@+id/external"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="外部存储"/>
+
+    </RadioGroup>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="40dp"

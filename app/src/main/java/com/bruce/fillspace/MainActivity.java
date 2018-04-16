@@ -10,6 +10,7 @@ import android.text.method.ScrollingMovementMethod;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 
 import java.io.File;
@@ -26,6 +27,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private final String DEV_ZERO = "/dev/zero";
     private final String DIR_FILL_STORAGE = "/FillStorage";
     private final int bufferSize = 1024 * 1024;
+    private final int STATUS_INTERNAL = 0;
+    private final int STATUS_EXTERNAL = 1;
 
     private TextView tvFreeSpace;
     private TextView tvInfo;
@@ -33,10 +36,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button btnRefresh;
     private Button btnExecute;
     private Button btnClean;
+    private RadioGroup radioGroup;
 
-    private File sdCard;
-    private String sdcardPath;
-    private File destinationDir;
+    private File storage;
+    private String storagePath;
+    private File desDir;
+    private int status = STATUS_INTERNAL;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,7 +49,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
 
         initView();
-        initDirectory();
+        initDirectory(status);
         showStorageFreeSpaceSize();
     }
 
@@ -55,32 +60,63 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btnRefresh = findViewById(R.id.btn_refresh);
         btnExecute = findViewById(R.id.btn_execute);
         btnClean = findViewById(R.id.btn_clean);
+        radioGroup = findViewById(R.id.radio_gruop);
 
         btnRefresh.setOnClickListener(this);
         btnExecute.setOnClickListener(this);
         btnClean.setOnClickListener(this);
         tvInfo.setMovementMethod(ScrollingMovementMethod.getInstance());
         etFileSize.setSelection(etFileSize.getText().length());
+
+        radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup group, int checkedId) {
+                switch (checkedId) {
+                    case R.id.internal:
+                        status = STATUS_INTERNAL;
+                        break;
+                    case R.id.external:
+                        status = STATUS_EXTERNAL;
+                        break;
+                    default:
+                        break;
+                }
+                initDirectory(status);
+                showStorageFreeSpaceSize();
+            }
+        });
     }
 
-    private void initDirectory() {
-        sdCard = Environment.getExternalStorageDirectory();
-        sdcardPath = sdCard.getAbsolutePath();
+    private void initDirectory(int status) {
 
-        destinationDir = new File(sdcardPath + DIR_FILL_STORAGE);
-        if (!destinationDir.exists()) {
-            if (destinationDir.mkdir()) {
-                refreshInfoTextView("mkdir: " + destinationDir.getAbsolutePath());
+        switch (status) {
+            case STATUS_INTERNAL:
+                storage = getFilesDir();
+                break;
+            case STATUS_EXTERNAL:
+                storage = Environment.getExternalStorageDirectory();
+                break;
+            default:
+                storage = getFilesDir();
+                break;
+        }
+
+        storagePath = storage.getAbsolutePath();
+        desDir = new File(storagePath + DIR_FILL_STORAGE);
+
+        if (!desDir.exists()) {
+            if (desDir.mkdir()) {
+                refreshInfoTextView("创建目录：" + desDir.getAbsolutePath());
             } else {
-                refreshInfoTextView("error: 创建文件夹失败!");
+                refreshInfoTextView("创建失败：" + desDir.getAbsolutePath());
             }
         } else {
-            refreshInfoTextView("文件夹路径: " + destinationDir.getAbsolutePath());
+            refreshInfoTextView("路径: " + desDir.getAbsolutePath());
         }
     }
 
     private void showStorageFreeSpaceSize() {
-        String freeSpaceSize = Formatter.formatFileSize(this, sdCard.getFreeSpace());
+        String freeSpaceSize = Formatter.formatFileSize(this, storage.getFreeSpace());
         tvFreeSpace.setText(freeSpaceSize);
     }
 
@@ -88,7 +124,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void executeWrite() {
 
         String fillSize = etFileSize.getText().toString();
-        String fileNameWithTimeStamp = sdcardPath + DIR_FILL_STORAGE + "/" + System.currentTimeMillis();
+        String fileNameWithTimeStamp = storagePath + DIR_FILL_STORAGE + "/" + System.currentTimeMillis();
 
         new AsyncTask<String, Integer, String>() {
 
@@ -163,7 +199,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             @Override
             protected String doInBackground(String... strings) {
-                File[] files = destinationDir.listFiles();
+                File[] files = desDir.listFiles();
                 for (File file : files) {
                     if (file.exists() && file.isFile()) {
                         String fileName = file.getName();

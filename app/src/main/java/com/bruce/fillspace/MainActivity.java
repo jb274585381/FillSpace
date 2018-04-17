@@ -126,7 +126,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @SuppressLint("StaticFieldLeak")
     private void executeWrite() {
 
-        String fillSize = etFileSize.getText().toString();
+        String fileSize = etFileSize.getText().toString();
         String fileNameWithTimeStamp = storagePath + DIR_FILL_STORAGE + "/" + System.currentTimeMillis();
 
         new AsyncTask<String, Integer, String>() {
@@ -140,26 +140,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             protected String doInBackground(String... strings) {
 
-                int fillSize = Integer.valueOf(strings[0]);
+                int size;
                 String fileName = strings[1];
 
                 File from = new File(DEV_ZERO);
                 File to = new File(fileName);
 
                 try {
+                    size = Integer.valueOf(strings[0]);
                     FileInputStream fileInputStream = new FileInputStream(from);
                     FileOutputStream fileOutputStream = new FileOutputStream(to);
                     FileChannel fromChannel = fileInputStream.getChannel();
                     FileChannel toChannel = fileOutputStream.getChannel();
 
                     ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
-                    for (int i = 1; i <= fillSize; i++) {
+                    for (int i = 1; i <= size; i++) {
                         fromChannel.read(buffer);
                         buffer.flip();
                         toChannel.write(buffer);
                         buffer.clear();
                         if (i % 100 == 0) {
-                            publishProgress(i * 100 / fillSize);
+                            publishProgress(i * 100 / size);
                         }
                     }
                     fileInputStream.close();
@@ -167,7 +168,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     fromChannel.close();
                     toChannel.close();
                 } catch (Exception e) {
-                    return e.getMessage();
+                    return e.toString();
                 }
 
                 return to.getName() + " 写入完毕!";
@@ -187,7 +188,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 showStorageFreeSpaceSize();
 
             }
-        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, fillSize, fileNameWithTimeStamp);
+        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, fileSize, fileNameWithTimeStamp);
     }
 
     @SuppressLint("StaticFieldLeak")

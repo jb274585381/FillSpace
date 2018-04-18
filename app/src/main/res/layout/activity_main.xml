@@ -5,34 +5,10 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <RadioGroup
-        android:id="@+id/radio_gruop"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:orientation="horizontal">
-
-        <RadioButton
-            android:id="@+id/internal"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:checked="true"
-            android:text="内部存储"/>
-
-        <RadioButton
-            android:id="@+id/external"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="外部存储"/>
-
-    </RadioGroup>
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="40dp"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="6dp"
         android:gravity="center"
         android:orientation="horizontal">
 
@@ -68,15 +44,16 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="设置文件大小："/>
+            android:text="设置剩余大小："/>
 
         <EditText
-            android:id="@+id/et_file_size"
+            android:id="@+id/et_residual_size"
             android:layout_width="100dp"
             android:layout_height="wrap_content"
             android:gravity="center_horizontal"
             android:inputType="number"
-            android:text="1024"
+            android:digits="0123456789."
+            android:text="10.5"
             />
 
         <TextView
@@ -90,7 +67,7 @@
             android:layout_width="wrap_content"
             android:layout_height="40dp"
             android:background="@drawable/btn_selector"
-            android:text="写入磁盘"
+            android:text="开始写入"
             android:textColor="@android:color/white"/>
 
     </LinearLayout>

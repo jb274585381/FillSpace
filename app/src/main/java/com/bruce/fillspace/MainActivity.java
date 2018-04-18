@@ -7,15 +7,17 @@ import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.text.format.Formatter;
 import android.text.method.ScrollingMovementMethod;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.RadioGroup;
 import android.widget.TextView;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
@@ -26,22 +28,33 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private final String DEV_ZERO = "/dev/zero";
     private final String DIR_FILL_STORAGE = "/FillStorage";
-    private final int bufferSize = 1024 * 1024;
-    private final int STATUS_INTERNAL = 0;
-    private final int STATUS_EXTERNAL = 1;
+    private final int SIZE_100KB = 1024 * 100;
+    private final int SIZE_1MB = 1024 * 1024;
+    private final int SIZE_10MB = 1024 * 1024 * 10;
+    private final int SIZE_100MB = 1024 * 1024 * 100;
+    private final int SIZE_1GB = 1024 * 1024 * 1024;
+
+    private final int SIZE_1 = 1;
+    private final int SIZE_10 = 10;
+    private final int SIZE_100 = 100;
+    private final int SIZE_1024 = 1024;
+
+    private final String KB_100_ = "KB_100_";
+    private final String MB_001_ = "MB_001_";
+    private final String MB_010_ = "MB_010_";
+    private final String MB_100_ = "MB_100_";
+    private final String GB_001_ = "GB_001_";
 
     private TextView tvFreeSpace;
     private TextView tvInfo;
-    private EditText etFileSize;
+    private EditText etResidualSize;
     private Button btnRefresh;
     private Button btnExecute;
     private Button btnClean;
-    private RadioGroup radioGroup;
 
     private File storage;
     private String storagePath;
     private File desDir;
-    private int status = STATUS_INTERNAL;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,58 +62,44 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
 
         initView();
-        initDirectory(status);
+        initDirectory();
         showStorageFreeSpaceSize();
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.btn_refresh:
+                showStorageFreeSpaceSize();
+                break;
+            case R.id.btn_execute:
+                executeWrite();
+                break;
+            case R.id.btn_clean:
+                cleanSpace();
+                break;
+            default:
+                break;
+        }
     }
 
     private void initView() {
         tvFreeSpace = findViewById(R.id.tv_free_space);
         tvInfo = findViewById(R.id.tv_info);
-        etFileSize = findViewById(R.id.et_file_size);
+        etResidualSize = findViewById(R.id.et_residual_size);
         btnRefresh = findViewById(R.id.btn_refresh);
         btnExecute = findViewById(R.id.btn_execute);
         btnClean = findViewById(R.id.btn_clean);
-        radioGroup = findViewById(R.id.radio_gruop);
 
         btnRefresh.setOnClickListener(this);
         btnExecute.setOnClickListener(this);
         btnClean.setOnClickListener(this);
         tvInfo.setMovementMethod(ScrollingMovementMethod.getInstance());
-        etFileSize.setSelection(etFileSize.getText().length());
-
-        radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(RadioGroup group, int checkedId) {
-                switch (checkedId) {
-                    case R.id.internal:
-                        status = STATUS_INTERNAL;
-                        break;
-                    case R.id.external:
-                        status = STATUS_EXTERNAL;
-                        break;
-                    default:
-                        break;
-                }
-                initDirectory(status);
-                showStorageFreeSpaceSize();
-            }
-        });
+        etResidualSize.setSelection(etResidualSize.getText().length());
     }
 
-    private void initDirectory(int status) {
-
-        switch (status) {
-            case STATUS_INTERNAL:
-                storage = getFilesDir();
-                break;
-            case STATUS_EXTERNAL:
-                storage = Environment.getExternalStorageDirectory();
-                break;
-            default:
-                storage = getFilesDir();
-                break;
-        }
-
+    private void initDirectory() {
+        storage = Environment.getExternalStorageDirectory();
         storagePath = storage.getAbsolutePath();
         desDir = new File(storagePath + DIR_FILL_STORAGE);
 
@@ -123,8 +122,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @SuppressLint("StaticFieldLeak")
     private void executeWrite() {
 
-        String fileSize = etFileSize.getText().toString();
-        String fileNameWithTimeStamp = storagePath + DIR_FILL_STORAGE + "/" + System.currentTimeMillis();
+        final String residualSize = etResidualSize.getText().toString();
+
 
         new AsyncTask<String, Integer, String>() {
 
@@ -137,38 +136,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             protected String doInBackground(String... strings) {
 
-                int size;
-                String fileName = strings[1];
-
-                File from = new File(DEV_ZERO);
-                File to = new File(fileName);
-
+                long residualSize = (long) (Float.valueOf(strings[0]) * SIZE_1MB);
                 try {
-                    size = Integer.valueOf(strings[0]);
-                    FileInputStream fileInputStream = new FileInputStream(from);
-                    FileOutputStream fileOutputStream = new FileOutputStream(to);
-                    FileChannel fromChannel = fileInputStream.getChannel();
-                    FileChannel toChannel = fileOutputStream.getChannel();
-
-                    ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
-                    for (int i = 1; i <= size; i++) {
-                        fromChannel.read(buffer);
-                        buffer.flip();
-                        toChannel.write(buffer);
-                        buffer.clear();
-                        if (i % 100 == 0) {
-                            publishProgress(i * 100 / size);
-                        }
-                    }
-                    fileInputStream.close();
-                    fileOutputStream.close();
-                    fromChannel.close();
-                    toChannel.close();
-                } catch (Exception e) {
+                    handleWrite(residualSize);
+                } catch (IOException e) {
                     return e.toString();
                 }
 
-                return to.getName() + " 写入完毕!";
+                return " 写入完毕!";
             }
 
             @Override
@@ -185,7 +160,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 showStorageFreeSpaceSize();
 
             }
-        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, fileSize, fileNameWithTimeStamp);
+        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, residualSize);
     }
 
     @SuppressLint("StaticFieldLeak")
@@ -238,21 +213,76 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    @Override
-    public void onClick(View v) {
-        switch (v.getId()) {
-            case R.id.btn_refresh:
-                showStorageFreeSpaceSize();
-                break;
-            case R.id.btn_execute:
-                executeWrite();
-                break;
-            case R.id.btn_clean:
-                cleanSpace();
-                break;
-            default:
-                break;
+    private void handleWrite(long residualSize) throws IOException {
+
+        long storageFreeSpace = storage.getFreeSpace();
+        long writeSize = storageFreeSpace - residualSize;
+
+        if (writeSize >= 0) {
+            handlePositive(residualSize);
+        } else {
+            handleNegative(writeSize);
         }
+    }
+
+    private void handlePositive(long residualSize) throws IOException {
+        File input = new File(DEV_ZERO);
+        FileInputStream fileInputStream = new FileInputStream(input);
+        FileChannel inputChannel = fileInputStream.getChannel();
+
+        long writeSize = storage.getFreeSpace() - residualSize;
+
+        while (writeSize > SIZE_100KB) {
+            if (writeSize <= SIZE_1MB) {
+                File output = new File(storagePath + DIR_FILL_STORAGE + "/" + KB_100_ + System.currentTimeMillis());
+                writeKB(inputChannel, output);
+            } else if (writeSize <= SIZE_10MB) {
+                File output = new File(storagePath + DIR_FILL_STORAGE + "/" + MB_001_ + System.currentTimeMillis());
+                writeMB(inputChannel, output, SIZE_1);
+            } else if (writeSize <= SIZE_100MB) {
+                File output = new File(storagePath + DIR_FILL_STORAGE + "/" + MB_010_ + System.currentTimeMillis());
+                writeMB(inputChannel, output, SIZE_10);
+            } else if (writeSize <= SIZE_1GB) {
+                File output = new File(storagePath + DIR_FILL_STORAGE + "/" + MB_100_ + System.currentTimeMillis());
+                writeMB(inputChannel, output, SIZE_100);
+            } else {
+                File output = new File(storagePath + DIR_FILL_STORAGE + "/" + GB_001_ + System.currentTimeMillis());
+                writeMB(inputChannel, output, SIZE_1024);
+            }
+            writeSize = storage.getFreeSpace() - residualSize;
+        }
+        inputChannel.close();
+        fileInputStream.close();
+    }
+
+    private void handleNegative(long residualSize) {
+
+    }
+
+    private void writeMB(FileChannel inputChannel, File output, int count) throws IOException {
+        FileOutputStream fileOutputStream = new FileOutputStream(output);
+        FileChannel outputChannel = fileOutputStream.getChannel();
+        ByteBuffer buffer = ByteBuffer.allocate(SIZE_1MB);
+        for (int i = 0; i < count; i++) {
+            inputChannel.read(buffer);
+            buffer.flip();
+            outputChannel.write(buffer);
+            buffer.clear();
+        }
+        outputChannel.close();
+        fileOutputStream.close();
+    }
+
+    private void writeKB(FileChannel inputChannel, File output) throws IOException {
+        FileOutputStream fileOutputStream = new FileOutputStream(output);
+        FileChannel outputChannel = fileOutputStream.getChannel();
+        ByteBuffer buffer = ByteBuffer.allocate(SIZE_100KB);
+        inputChannel.read(buffer);
+        buffer.flip();
+        outputChannel.write(buffer);
+        buffer.clear();
+        outputChannel.close();
+        fileOutputStream.close();
     }
 
 }

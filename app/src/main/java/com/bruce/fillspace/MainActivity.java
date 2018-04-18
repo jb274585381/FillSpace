@@ -35,7 +35,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private EditText etFileSize;
     private Button btnRefresh;
     private Button btnExecute;
-    private Button btnDeleteLast;
     private Button btnClean;
     private RadioGroup radioGroup;
 
@@ -60,13 +59,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         etFileSize = findViewById(R.id.et_file_size);
         btnRefresh = findViewById(R.id.btn_refresh);
         btnExecute = findViewById(R.id.btn_execute);
-        btnDeleteLast = findViewById(R.id.btn_delete_last);
         btnClean = findViewById(R.id.btn_clean);
         radioGroup = findViewById(R.id.radio_gruop);
 
         btnRefresh.setOnClickListener(this);
         btnExecute.setOnClickListener(this);
-        btnDeleteLast.setOnClickListener(this);
         btnClean.setOnClickListener(this);
         tvInfo.setMovementMethod(ScrollingMovementMethod.getInstance());
         etFileSize.setSelection(etFileSize.getText().length());
@@ -233,45 +230,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
-    @SuppressLint("StaticFieldLeak")
-    private void deleteLastFile() {
-        new AsyncTask<String, String, String>() {
-
-            @Override
-            protected void onPreExecute() {
-                super.onPreExecute();
-                refreshInfoTextView("清理最后一个文件...");
-            }
-
-            @Override
-            protected String doInBackground(String... strings) {
-                File[] files = desDir.listFiles();
-                if (files.length > 0) {
-                    File lastFile = files[0];
-                    for (File file : files) {
-                        if (file.lastModified() >= lastFile.lastModified()) {
-                            lastFile = file;
-                        }
-                    }
-                    String fileName = lastFile.getName();
-                    if (lastFile.delete()) {
-                        return fileName + " 删除成功！";
-                    } else {
-                        return fileName + " 删除失败！";
-                    }
-                }
-                return "已没有文件!";
-            }
-
-            @Override
-            protected void onPostExecute(String s) {
-                super.onPostExecute(s);
-                refreshInfoTextView(s);
-                showStorageFreeSpaceSize();
-            }
-        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-    }
-
     private void refreshInfoTextView(String info) {
         tvInfo.append(info + "\n");
         int offset = tvInfo.getLineCount() * tvInfo.getLineHeight();
@@ -288,9 +246,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.btn_execute:
                 executeWrite();
-                break;
-            case R.id.btn_delete_last:
-                deleteLastFile();
                 break;
             case R.id.btn_clean:
                 cleanSpace();

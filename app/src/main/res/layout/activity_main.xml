@@ -107,46 +107,14 @@
         android:scrollbars="vertical"
         />
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+    <Button
+        android:id="@+id/btn_clean"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:layout_gravity="center"
         android:layout_marginBottom="6dp"
-        android:orientation="horizontal">
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
-            <Button
-                android:id="@+id/btn_delete_last"
-                android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:layout_gravity="center"
-                android:background="@drawable/btn_selector"
-                android:text="清理上一个"
-                android:textColor="@android:color/white" />
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
-            <Button
-                android:id="@+id/btn_clean"
-                android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:layout_gravity="center"
-                android:background="@drawable/btn_selector"
-                android:text="清理所有"
-                android:textColor="@android:color/white" />
-
-        </LinearLayout>
-
-    </LinearLayout>
+        android:background="@drawable/btn_selector"
+        android:text="清理所有"
+        android:textColor="@android:color/white" />
 
 </LinearLayout>

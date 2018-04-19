@@ -45,6 +45,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private final String MB_100_ = "MB_100_";
     private final String GB_001_ = "GB_001_";
 
+    private boolean isWriting = false;
+
     private TextView tvFreeSpace;
     private TextView tvInfo;
     private EditText etResidualSize;
@@ -73,10 +75,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 showStorageFreeSpaceSize();
                 break;
             case R.id.btn_execute:
-                executeWrite();
+                if (!isWriting) {
+                    executeWrite();
+                }
                 break;
             case R.id.btn_clean:
-                cleanSpace();
+                if (!isWriting) {
+                    cleanSpace();
+                }
                 break;
             default:
                 break;
@@ -124,6 +130,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
+            isWriting = true;
             refreshInfoTextView("开始调整大小...");
         }
 
@@ -135,7 +142,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             } catch (Exception e) {
                 return e.toString();
             }
-            return " 调整完毕!";
+            return "调整完毕!";
         }
 
         @Override
@@ -150,6 +157,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             super.onPostExecute(s);
             refreshInfoTextView(s);
             showStorageFreeSpaceSize();
+            isWriting = false;
         }
 
         private void handleWrite(long residualSize) throws IOException {
@@ -255,6 +263,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             gb001List.remove(0);
                             publishProgress(file.getName() + " 已删除");
                         }
+                    } else {
+                        publishProgress("无法腾出更多空间");
+                        break;
                     }
                 } else if (writeSize < SIZE_10MB) {
                     if (!mb001List.isEmpty()) {
@@ -281,6 +292,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             gb001List.remove(0);
                             publishProgress(file.getName() + " 已删除");
                         }
+                    } else {
+                        publishProgress("无法腾出更多空间");
+                        break;
                     }
                 } else if (writeSize < SIZE_100MB) {
                     if (!mb010List.isEmpty()) {
@@ -301,6 +315,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             gb001List.remove(0);
                             publishProgress(file.getName() + " 已删除");
                         }
+                    } else {
+                        publishProgress("无法腾出更多空间");
+                        break;
                     }
                 } else if (writeSize < SIZE_1GB) {
                     if (!mb100List.isEmpty()) {
@@ -315,6 +332,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             gb001List.remove(0);
                             publishProgress(file.getName() + " 已删除");
                         }
+                    } else {
+                        publishProgress("无法腾出更多空间");
+                        break;
                     }
                 } else {
                     if (!gb001List.isEmpty()) {
@@ -323,6 +343,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             gb001List.remove(0);
                             publishProgress(file.getName() + " 已删除");
                         }
+                    } else {
+                        publishProgress("无法腾出更多空间");
+                        break;
                     }
                 }
                 writeSize = (storage.getFreeSpace() - residualSize) * (-1);

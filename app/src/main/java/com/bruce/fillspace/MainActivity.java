@@ -119,46 +119,249 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         tvFreeSpace.setText(freeSpaceSize);
     }
 
+    private class WriteAsyncTask extends AsyncTask<String, String, String> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            refreshInfoTextView("开始调整大小...");
+        }
+
+        @Override
+        protected String doInBackground(String... strings) {
+            try {
+                long residualSize = (long) (Float.valueOf(strings[0]) * SIZE_1MB);
+                handleWrite(residualSize);
+            } catch (Exception e) {
+                return e.toString();
+            }
+            return " 调整完毕!";
+        }
+
+        @Override
+        protected void onProgressUpdate(String... strings) {
+            super.onProgressUpdate(strings);
+            refreshInfoTextView(strings[0]);
+            showStorageFreeSpaceSize();
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+            refreshInfoTextView(s);
+            showStorageFreeSpaceSize();
+        }
+
+        private void handleWrite(long residualSize) throws IOException {
+            long writeSize = storage.getFreeSpace() - residualSize;
+
+            if (writeSize >= 0) {
+                handlePositive(residualSize);
+            } else {
+                handleNegative(residualSize);
+            }
+        }
+
+        private void handlePositive(long residualSize) throws IOException {
+            File input = new File(DEV_ZERO);
+            FileInputStream fileInputStream = new FileInputStream(input);
+            FileChannel inputChannel = fileInputStream.getChannel();
+
+            long writeSize = storage.getFreeSpace() - residualSize;
+            File output;
+
+            while (writeSize > SIZE_100KB) {
+                if (writeSize <= SIZE_1MB) {
+                    output = new File(storagePath + DIR_FILL_STORAGE + "/" + KB_100_ + System.currentTimeMillis());
+                    writeKB(inputChannel, output);
+                } else if (writeSize <= SIZE_10MB) {
+                    output = new File(storagePath + DIR_FILL_STORAGE + "/" + MB_001_ + System.currentTimeMillis());
+                    writeMB(inputChannel, output, SIZE_1);
+                } else if (writeSize <= SIZE_100MB) {
+                    output = new File(storagePath + DIR_FILL_STORAGE + "/" + MB_010_ + System.currentTimeMillis());
+                    writeMB(inputChannel, output, SIZE_10);
+                } else if (writeSize <= SIZE_1GB) {
+                    output = new File(storagePath + DIR_FILL_STORAGE + "/" + MB_100_ + System.currentTimeMillis());
+                    writeMB(inputChannel, output, SIZE_100);
+                } else {
+                    output = new File(storagePath + DIR_FILL_STORAGE + "/" + GB_001_ + System.currentTimeMillis());
+                    writeMB(inputChannel, output, SIZE_1024);
+                }
+                publishProgress(output.getName() + " 已写入");
+                writeSize = storage.getFreeSpace() - residualSize;
+            }
+            inputChannel.close();
+            fileInputStream.close();
+        }
+
+        private void handleNegative(long residualSize) throws IOException {
+            ArrayList<String> kb100List = new ArrayList<>();
+            ArrayList<String> mb001List = new ArrayList<>();
+            ArrayList<String> mb010List = new ArrayList<>();
+            ArrayList<String> mb100List = new ArrayList<>();
+            ArrayList<String> gb001List = new ArrayList<>();
+
+            File[] files = desDir.listFiles();
+            for (File file : files) {
+                String filePath;
+                if (file.exists() && file.isFile()) {
+                    filePath = file.getAbsolutePath();
+                    if (filePath.contains(KB_100_)) {
+                        kb100List.add(filePath);
+                    } else if (filePath.contains(MB_001_)) {
+                        mb001List.add(filePath);
+                    } else if (filePath.contains(MB_010_)) {
+                        mb010List.add(filePath);
+                    } else if (filePath.contains(MB_100_)) {
+                        mb100List.add(filePath);
+                    } else if (filePath.contains(GB_001_)) {
+                        gb001List.add(filePath);
+                    }
+                }
+            }
+
+            long writeSize = (storage.getFreeSpace() - residualSize) * (-1);
+            File file;
+
+            while (writeSize > SIZE_100KB) {
+                if (writeSize < SIZE_1MB) {
+                    if (!kb100List.isEmpty()) {
+                        file = new File(kb100List.get(0));
+                        if (file.delete()) {
+                            kb100List.remove(0);
+                            publishProgress(file.getName() + " 已删除");
+                        }
+                    } else if (!mb001List.isEmpty()) {
+                        file = new File(mb001List.get(0));
+                        if (file.delete()) {
+                            mb001List.remove(0);
+                            publishProgress(file.getName() + " 已删除");
+                        }
+                    } else if (!mb010List.isEmpty()) {
+                        file = new File(mb010List.get(0));
+                        if (file.delete()) {
+                            mb010List.remove(0);
+                            publishProgress(file.getName() + " 已删除");
+                        }
+                    } else if (!mb100List.isEmpty()) {
+                        file = new File(mb100List.get(0));
+                        if (file.delete()) {
+                            mb100List.remove(0);
+                            publishProgress(file.getName() + " 已删除");
+                        }
+                    } else if (!gb001List.isEmpty()) {
+                        file = new File(gb001List.get(0));
+                        if (file.delete()) {
+                            gb001List.remove(0);
+                            publishProgress(file.getName() + " 已删除");
+                        }
+                    }
+                } else if (writeSize < SIZE_10MB) {
+                    if (!mb001List.isEmpty()) {
+                        file = new File(mb001List.get(0));
+                        if (file.delete()) {
+                            mb001List.remove(0);
+                            publishProgress(file.getName() + " 已删除");
+                        }
+                    } else if (!mb010List.isEmpty()) {
+                        file = new File(mb010List.get(0));
+                        if (file.delete()) {
+                            mb010List.remove(0);
+                            publishProgress(file.getName() + " 已删除");
+                        }
+                    } else if (!mb100List.isEmpty()) {
+                        file = new File(mb100List.get(0));
+                        if (file.delete()) {
+                            mb100List.remove(0);
+                            publishProgress(file.getName() + " 已删除");
+                        }
+                    } else if (!gb001List.isEmpty()) {
+                        file = new File(gb001List.get(0));
+                        if (file.delete()) {
+                            gb001List.remove(0);
+                            publishProgress(file.getName() + " 已删除");
+                        }
+                    }
+                } else if (writeSize < SIZE_100MB) {
+                    if (!mb010List.isEmpty()) {
+                        file = new File(mb010List.get(0));
+                        if (file.delete()) {
+                            mb010List.remove(0);
+                            publishProgress(file.getName() + " 已删除");
+                        }
+                    } else if (!mb100List.isEmpty()) {
+                        file = new File(mb100List.get(0));
+                        if (file.delete()) {
+                            mb100List.remove(0);
+                            publishProgress(file.getName() + " 已删除");
+                        }
+                    } else if (!gb001List.isEmpty()) {
+                        file = new File(gb001List.get(0));
+                        if (file.delete()) {
+                            gb001List.remove(0);
+                            publishProgress(file.getName() + " 已删除");
+                        }
+                    }
+                } else if (writeSize < SIZE_1GB) {
+                    if (!mb100List.isEmpty()) {
+                        file = new File(mb100List.get(0));
+                        if (file.delete()) {
+                            mb100List.remove(0);
+                            publishProgress(file.getName() + " 已删除");
+                        }
+                    } else if (!gb001List.isEmpty()) {
+                        file = new File(gb001List.get(0));
+                        if (file.delete()) {
+                            gb001List.remove(0);
+                            publishProgress(file.getName() + " 已删除");
+                        }
+                    }
+                } else {
+                    if (!gb001List.isEmpty()) {
+                        file = new File(gb001List.get(0));
+                        if (file.delete()) {
+                            gb001List.remove(0);
+                            publishProgress(file.getName() + " 已删除");
+                        }
+                    }
+                }
+                writeSize = (storage.getFreeSpace() - residualSize) * (-1);
+            }
+            handlePositive(residualSize);
+        }
+
+        private void writeMB(FileChannel inputChannel, File output, int count) throws IOException {
+            FileOutputStream fileOutputStream = new FileOutputStream(output);
+            FileChannel outputChannel = fileOutputStream.getChannel();
+            ByteBuffer buffer = ByteBuffer.allocate(SIZE_1MB);
+            for (int i = 0; i < count; i++) {
+                inputChannel.read(buffer);
+                buffer.flip();
+                outputChannel.write(buffer);
+                buffer.clear();
+            }
+            outputChannel.close();
+            fileOutputStream.close();
+        }
+
+        private void writeKB(FileChannel inputChannel, File output) throws IOException {
+            FileOutputStream fileOutputStream = new FileOutputStream(output);
+            FileChannel outputChannel = fileOutputStream.getChannel();
+            ByteBuffer buffer = ByteBuffer.allocate(SIZE_100KB);
+            inputChannel.read(buffer);
+            buffer.flip();
+            outputChannel.write(buffer);
+            buffer.clear();
+            outputChannel.close();
+            fileOutputStream.close();
+        }
+    }
+
     @SuppressLint("StaticFieldLeak")
     private void executeWrite() {
-
         final String residualSize = etResidualSize.getText().toString();
-
-
-        new AsyncTask<String, Integer, String>() {
-
-            @Override
-            protected void onPreExecute() {
-                super.onPreExecute();
-                refreshInfoTextView("开始写入...");
-            }
-
-            @Override
-            protected String doInBackground(String... strings) {
-                try {
-                    long residualSize = (long) (Float.valueOf(strings[0]) * SIZE_1MB);
-                    handleWrite(residualSize);
-                } catch (Exception e) {
-                    return e.toString();
-                }
-                return " 写入完毕!";
-            }
-
-            @Override
-            protected void onProgressUpdate(Integer... values) {
-                super.onProgressUpdate(values);
-                refreshInfoTextView("已写入..." + values[0] + "%");
-                showStorageFreeSpaceSize();
-            }
-
-            @Override
-            protected void onPostExecute(String s) {
-                super.onPostExecute(s);
-                refreshInfoTextView(s);
-                showStorageFreeSpaceSize();
-
-            }
-        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, residualSize);
+        WriteAsyncTask writeAsyncTask = new WriteAsyncTask();
+        writeAsyncTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, residualSize);
     }
 
     @SuppressLint("StaticFieldLeak")
@@ -210,190 +413,4 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             tvInfo.scrollTo(0, offset - tvInfo.getHeight());
         }
     }
-
-    private void handleWrite(long residualSize) throws IOException {
-        long writeSize = storage.getFreeSpace() - residualSize;
-
-        if (writeSize >= 0) {
-            handlePositive(residualSize);
-        } else {
-            handleNegative(residualSize);
-        }
-    }
-
-    private void handlePositive(long residualSize) throws IOException {
-        File input = new File(DEV_ZERO);
-        FileInputStream fileInputStream = new FileInputStream(input);
-        FileChannel inputChannel = fileInputStream.getChannel();
-
-        long writeSize = storage.getFreeSpace() - residualSize;
-
-        while (writeSize > SIZE_100KB) {
-            if (writeSize <= SIZE_1MB) {
-                File output = new File(storagePath + DIR_FILL_STORAGE + "/" + KB_100_ + System.currentTimeMillis());
-                writeKB(inputChannel, output);
-            } else if (writeSize <= SIZE_10MB) {
-                File output = new File(storagePath + DIR_FILL_STORAGE + "/" + MB_001_ + System.currentTimeMillis());
-                writeMB(inputChannel, output, SIZE_1);
-            } else if (writeSize <= SIZE_100MB) {
-                File output = new File(storagePath + DIR_FILL_STORAGE + "/" + MB_010_ + System.currentTimeMillis());
-                writeMB(inputChannel, output, SIZE_10);
-            } else if (writeSize <= SIZE_1GB) {
-                File output = new File(storagePath + DIR_FILL_STORAGE + "/" + MB_100_ + System.currentTimeMillis());
-                writeMB(inputChannel, output, SIZE_100);
-            } else {
-                File output = new File(storagePath + DIR_FILL_STORAGE + "/" + GB_001_ + System.currentTimeMillis());
-                writeMB(inputChannel, output, SIZE_1024);
-            }
-            writeSize = storage.getFreeSpace() - residualSize;
-        }
-        inputChannel.close();
-        fileInputStream.close();
-    }
-
-    private void handleNegative(long residualSize) throws IOException {
-        ArrayList<String> kb100List = new ArrayList<>();
-        ArrayList<String> mb001List = new ArrayList<>();
-        ArrayList<String> mb010List = new ArrayList<>();
-        ArrayList<String> mb100List = new ArrayList<>();
-        ArrayList<String> gb001List = new ArrayList<>();
-
-        File[] files = desDir.listFiles();
-        for (File file : files) {
-            String filePath;
-            if (file.exists() && file.isFile()) {
-                filePath = file.getAbsolutePath();
-                if (filePath.contains(KB_100_)) {
-                    kb100List.add(filePath);
-                } else if (filePath.contains(MB_001_)) {
-                    mb001List.add(filePath);
-                } else if (filePath.contains(MB_010_)) {
-                    mb010List.add(filePath);
-                } else if (filePath.contains(MB_100_)) {
-                    mb100List.add(filePath);
-                } else if (filePath.contains(GB_001_)) {
-                    gb001List.add(filePath);
-                }
-            }
-        }
-        long writeSize = (storage.getFreeSpace() - residualSize) * (-1);
-
-        while (writeSize > SIZE_100KB) {
-            if (writeSize <= SIZE_1MB) {
-                if (!kb100List.isEmpty()) {
-                    File file = new File(kb100List.get(0));
-                    if (file.delete()) {
-                        kb100List.remove(0);
-                    }
-                } else if (!mb001List.isEmpty()) {
-                    File file = new File(mb001List.get(0));
-                    if (file.delete()) {
-                        mb001List.remove(0);
-                    }
-                } else if (!mb010List.isEmpty()) {
-                    File file = new File(mb010List.get(0));
-                    if (file.delete()) {
-                        mb010List.remove(0);
-                    }
-                } else if (!mb100List.isEmpty()) {
-                    File file = new File(mb100List.get(0));
-                    if (file.delete()) {
-                        mb100List.remove(0);
-                    }
-                } else if (!gb001List.isEmpty()) {
-                    File file = new File(gb001List.get(0));
-                    if (file.delete()) {
-                        gb001List.remove(0);
-                    }
-                }
-            } else if (writeSize <= SIZE_10MB) {
-                if (!mb001List.isEmpty()) {
-                    File file = new File(mb001List.get(0));
-                    if (file.delete()) {
-                        mb001List.remove(0);
-                    }
-                } else if (!mb010List.isEmpty()) {
-                    File file = new File(mb010List.get(0));
-                    if (file.delete()) {
-                        mb010List.remove(0);
-                    }
-                } else if (!mb100List.isEmpty()) {
-                    File file = new File(mb100List.get(0));
-                    if (file.delete()) {
-                        mb100List.remove(0);
-                    }
-                } else if (!gb001List.isEmpty()) {
-                    File file = new File(gb001List.get(0));
-                    if (file.delete()) {
-                        gb001List.remove(0);
-                    }
-                }
-            } else if (writeSize <= SIZE_100MB) {
-                if (!mb010List.isEmpty()) {
-                    File file = new File(mb010List.get(0));
-                    if (file.delete()) {
-                        mb010List.remove(0);
-                    }
-                } else if (!mb100List.isEmpty()) {
-                    File file = new File(mb100List.get(0));
-                    if (file.delete()) {
-                        mb100List.remove(0);
-                    }
-                } else if (!gb001List.isEmpty()) {
-                    File file = new File(gb001List.get(0));
-                    if (file.delete()) {
-                        gb001List.remove(0);
-                    }
-                }
-            } else if (writeSize <= SIZE_1GB) {
-                if (!mb100List.isEmpty()) {
-                    File file = new File(mb100List.get(0));
-                    if (file.delete()) {
-                        mb100List.remove(0);
-                    }
-                } else if (!gb001List.isEmpty()) {
-                    File file = new File(gb001List.get(0));
-                    if (file.delete()) {
-                        gb001List.remove(0);
-                    }
-                }
-            } else {
-                if (!gb001List.isEmpty()) {
-                    File file = new File(gb001List.get(0));
-                    if (file.delete()) {
-                        gb001List.remove(0);
-                    }
-                }
-            }
-            writeSize = (storage.getFreeSpace() - residualSize) * (-1);
-        }
-        handlePositive(residualSize);
-    }
-
-    private void writeMB(FileChannel inputChannel, File output, int count) throws IOException {
-        FileOutputStream fileOutputStream = new FileOutputStream(output);
-        FileChannel outputChannel = fileOutputStream.getChannel();
-        ByteBuffer buffer = ByteBuffer.allocate(SIZE_1MB);
-        for (int i = 0; i < count; i++) {
-            inputChannel.read(buffer);
-            buffer.flip();
-            outputChannel.write(buffer);
-            buffer.clear();
-        }
-        outputChannel.close();
-        fileOutputStream.close();
-    }
-
-    private void writeKB(FileChannel inputChannel, File output) throws IOException {
-        FileOutputStream fileOutputStream = new FileOutputStream(output);
-        FileChannel outputChannel = fileOutputStream.getChannel();
-        ByteBuffer buffer = ByteBuffer.allocate(SIZE_100KB);
-        inputChannel.read(buffer);
-        buffer.flip();
-        outputChannel.write(buffer);
-        buffer.clear();
-        outputChannel.close();
-        fileOutputStream.close();
-    }
-
 }

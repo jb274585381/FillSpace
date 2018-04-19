@@ -15,11 +15,11 @@ import android.widget.TextView;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
 
 /**
  * @author bo.jiang
@@ -135,14 +135,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             @Override
             protected String doInBackground(String... strings) {
-
-                long residualSize = (long) (Float.valueOf(strings[0]) * SIZE_1MB);
                 try {
+                    long residualSize = (long) (Float.valueOf(strings[0]) * SIZE_1MB);
                     handleWrite(residualSize);
-                } catch (IOException e) {
+                } catch (Exception e) {
                     return e.toString();
                 }
-
                 return " 写入完毕!";
             }
 
@@ -214,14 +212,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void handleWrite(long residualSize) throws IOException {
-
-        long storageFreeSpace = storage.getFreeSpace();
-        long writeSize = storageFreeSpace - residualSize;
+        long writeSize = storage.getFreeSpace() - residualSize;
 
         if (writeSize >= 0) {
             handlePositive(residualSize);
         } else {
-            handleNegative(writeSize);
+            handleNegative(residualSize);
         }
     }
 
@@ -255,8 +251,123 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         fileInputStream.close();
     }
 
-    private void handleNegative(long residualSize) {
+    private void handleNegative(long residualSize) throws IOException {
+        ArrayList<String> kb100List = new ArrayList<>();
+        ArrayList<String> mb001List = new ArrayList<>();
+        ArrayList<String> mb010List = new ArrayList<>();
+        ArrayList<String> mb100List = new ArrayList<>();
+        ArrayList<String> gb001List = new ArrayList<>();
 
+        File[] files = desDir.listFiles();
+        for (File file : files) {
+            String filePath;
+            if (file.exists() && file.isFile()) {
+                filePath = file.getAbsolutePath();
+                if (filePath.contains(KB_100_)) {
+                    kb100List.add(filePath);
+                } else if (filePath.contains(MB_001_)) {
+                    mb001List.add(filePath);
+                } else if (filePath.contains(MB_010_)) {
+                    mb010List.add(filePath);
+                } else if (filePath.contains(MB_100_)) {
+                    mb100List.add(filePath);
+                } else if (filePath.contains(GB_001_)) {
+                    gb001List.add(filePath);
+                }
+            }
+        }
+        long writeSize = (storage.getFreeSpace() - residualSize) * (-1);
+
+        while (writeSize > SIZE_100KB) {
+            if (writeSize <= SIZE_1MB) {
+                if (!kb100List.isEmpty()) {
+                    File file = new File(kb100List.get(0));
+                    if (file.delete()) {
+                        kb100List.remove(0);
+                    }
+                } else if (!mb001List.isEmpty()) {
+                    File file = new File(mb001List.get(0));
+                    if (file.delete()) {
+                        mb001List.remove(0);
+                    }
+                } else if (!mb010List.isEmpty()) {
+                    File file = new File(mb010List.get(0));
+                    if (file.delete()) {
+                        mb010List.remove(0);
+                    }
+                } else if (!mb100List.isEmpty()) {
+                    File file = new File(mb100List.get(0));
+                    if (file.delete()) {
+                        mb100List.remove(0);
+                    }
+                } else if (!gb001List.isEmpty()) {
+                    File file = new File(gb001List.get(0));
+                    if (file.delete()) {
+                        gb001List.remove(0);
+                    }
+                }
+            } else if (writeSize <= SIZE_10MB) {
+                if (!mb001List.isEmpty()) {
+                    File file = new File(mb001List.get(0));
+                    if (file.delete()) {
+                        mb001List.remove(0);
+                    }
+                } else if (!mb010List.isEmpty()) {
+                    File file = new File(mb010List.get(0));
+                    if (file.delete()) {
+                        mb010List.remove(0);
+                    }
+                } else if (!mb100List.isEmpty()) {
+                    File file = new File(mb100List.get(0));
+                    if (file.delete()) {
+                        mb100List.remove(0);
+                    }
+                } else if (!gb001List.isEmpty()) {
+                    File file = new File(gb001List.get(0));
+                    if (file.delete()) {
+                        gb001List.remove(0);
+                    }
+                }
+            } else if (writeSize <= SIZE_100MB) {
+                if (!mb010List.isEmpty()) {
+                    File file = new File(mb010List.get(0));
+                    if (file.delete()) {
+                        mb010List.remove(0);
+                    }
+                } else if (!mb100List.isEmpty()) {
+                    File file = new File(mb100List.get(0));
+                    if (file.delete()) {
+                        mb100List.remove(0);
+                    }
+                } else if (!gb001List.isEmpty()) {
+                    File file = new File(gb001List.get(0));
+                    if (file.delete()) {
+                        gb001List.remove(0);
+                    }
+                }
+            } else if (writeSize <= SIZE_1GB) {
+                if (!mb100List.isEmpty()) {
+                    File file = new File(mb100List.get(0));
+                    if (file.delete()) {
+                        mb100List.remove(0);
+                    }
+                } else if (!gb001List.isEmpty()) {
+                    File file = new File(gb001List.get(0));
+                    if (file.delete()) {
+                        gb001List.remove(0);
+                    }
+                }
+            } else {
+                if (!gb001List.isEmpty()) {
+                    File file = new File(gb001List.get(0));
+                    if (file.delete()) {
+                        gb001List.remove(0);
+                    }
+                }
+            }
+            writeSize = (storage.getFreeSpace() - residualSize) * (-1);
+        }
+        handlePositive(residualSize);
     }
 
     private void writeMB(FileChannel inputChannel, File output, int count) throws IOException {
